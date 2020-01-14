@@ -61,11 +61,11 @@ type ReceiveMessageType = {
 }
 
 type SendType = PingType | SendJoinType | SendLeaveType | SendMessageType;
-type ReceiveType = InfoType | PongType | ReceiveJoinType | ReceiveLeaveType | ReceiveMessageType;
+export type ReceiveType = InfoType | PongType | ReceiveJoinType | ReceiveLeaveType | ReceiveMessageType;
 
 class WebSocketWrapper {
   connectionId: (string | null) = null;
-  intervalId: (NodeJS.Timer | null) = null;
+  intervalId: (number | null) = null;
   listener: (((message: ReceiveType) => void) | null) = null;
   waitConnectivityId: (string | null) = null;
   webSocket: (WebSocket | null) = null;
@@ -186,8 +186,4 @@ class WebSocketWrapper {
   };
 }
 
-const webSocket = new WebSocketWrapper();
-export {
-  ReceiveType,
-  webSocket,
-};
+export const webSocket = new WebSocketWrapper();

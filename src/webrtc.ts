@@ -23,7 +23,7 @@ type CandidateMessage = {
   type: 'candidate',
   candidate: any,
 }
-type SignalingMessage = SdpMessage | CandidateMessage;
+export type SignalingMessage = SdpMessage | CandidateMessage;
 type PeerInfo = { connection: RTCPeerConnection, stream?: MediaStream }
 
 const stopStream = (stream: MediaStream | null | undefined): void => {
@@ -35,7 +35,7 @@ const stopStream = (stream: MediaStream | null | undefined): void => {
   }
 };
 
-class WebRTC {
+export class WebRTC {
   room: string;
   localStream: (MediaStream | null) = null;
   peers: { [peerId: string]: PeerInfo } = {};
@@ -83,11 +83,11 @@ class WebRTC {
       case 'sdp':
         if (peerConnection.remoteDescription == null) {
           await peerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp));
-          if (peerConnection.remoteDescription.type === 'offer') {
-            const description = await peerConnection.createAnswer();
-            peerConnection.setLocalDescription(description);
-            this.sendSignalingMessage(peerId, { type: 'sdp', sdp: description });
-          }
+          // if (peerConnection?.remoteDescription?.type === 'offer') {
+          //   const description = await peerConnection.createAnswer();
+          //   peerConnection.setLocalDescription(description);
+          //   this.sendSignalingMessage(peerId, { type: 'sdp', sdp: description });
+          // }
         }
         break;
       case 'candidate':
@@ -97,10 +97,11 @@ class WebRTC {
   }
 
   remoteStreams(): Array<MediaStream> {
-    return Object
-      .keys(this.peers)
-      .map(peerId => this.peers[peerId].stream)
-      .filter(stream => stream != null);
+    // return Object
+    //   .keys(this.peers)
+    //   .map(peerId => this.peers[peerId].stream)
+    //   .filter(stream => stream != null);
+    return [];
   }
 
   leavePeer(peerId: string): void {
@@ -136,7 +137,9 @@ class WebRTC {
             });
         }
       };
-      rtcPeerConnection.addTrack(this.localStream.getVideoTracks()[0], this.localStream);
+      if (this.localStream != null) {
+        rtcPeerConnection.addTrack(this.localStream.getVideoTracks()[0], this.localStream);
+      }
       this.peers[peerId] = { connection: rtcPeerConnection };
     }
     return this.peers[peerId];
@@ -162,8 +165,3 @@ class WebRTC {
     return false;
   }
 }
-
-export {
-  SignalingMessage,
-  WebRTC,
-};
