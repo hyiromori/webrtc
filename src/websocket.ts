@@ -1,189 +1,151 @@
-import { v4 as uuid } from 'uuid';
+import { v4 as uuid } from 'uuid'
 
-const WS_URL = 'wss://web-socket.arukascloud.io/ws';
+// const WS_URL = 'wss://websocket.hyiromori.com/';
+const WS_URL = 'wss://a185bkcc38.execute-api.ap-northeast-1.amazonaws.com/prod'
 
-type WebSocketStatus = 'Connecting' | 'Open' | 'Closing' | 'Closed' | 'Disconnected'
-
-type PingType = {
-  requestId: string,
-  type: 'ping',
-};
-
-type PongType = {
-  requestId: string,
-  type: 'pong',
-};
+type WebSocketStatus = 'Connecting' | 'Open' | 'Ready' | 'Closing' | 'Closed' | 'Disconnected'
 
 type InfoType = {
+  requestId: string,
   type: 'info',
   id: string,
 }
 
-type SendJoinType = {
+type JoinType = {
   requestId: string,
   type: 'join',
-  group: string,
+  groupId: string,
 };
 
-type ReceiveJoinType = {
+type JoinedType = {
   requestId: string,
-  type: 'join',
-  group: string,
-  from: string,
+  type: 'joined',
+  groupId: string,
 };
 
-type SendLeaveType = {
+type LeaveType = {
   requestId: string,
   type: 'leave',
   group: string,
 };
 
-type ReceiveLeaveType = {
+type LeavedType = {
   requestId: string,
-  type: 'leave',
+  type: 'leaved',
   group: string,
-  from: string,
 };
 
-type SendMessageType = {
+type BroadcastType = {
   requestId: string,
-  type: 'message',
-  group: string,
-  to?: string,
-  message: any,
+  type: 'broadcast',
+  to: string,
+  payload: any,
 }
 
-type ReceiveMessageType = {
+type UnicastType = {
   requestId: string,
-  type: 'message',
-  from: string,
-  message: any,
+  type: 'unicast',
+  to: string,
+  payload: any,
 }
 
-type SendType = PingType | SendJoinType | SendLeaveType | SendMessageType;
-export type ReceiveType = InfoType | PongType | ReceiveJoinType | ReceiveLeaveType | ReceiveMessageType;
+type SendType = InfoType | JoinType | LeaveType | BroadcastType | UnicastType;
+export type ReceiveType = InfoType | JoinedType | LeavedType | BroadcastType | UnicastType;
 
 class WebSocketWrapper {
-  connectionId: (string | null) = null;
-  intervalId: (number | null) = null;
-  listener: (((message: ReceiveType) => void) | null) = null;
-  waitConnectivityId: (string | null) = null;
-  webSocket: (WebSocket | null) = null;
+  connectionId: (string | null) = null
+  listener: (((message: ReceiveType) => void) | null) = null
+  webSocket: (WebSocket | null) = null
 
   constructor() {
-    this.reconnect();
-    this.intervalId = setInterval(() => {
-      if (this.webSocket == null) {
-        this.reconnect();
-      } else {
-        // this.checkConnectivity();
-      }
-    }, 5000);
+    this.reconnect()
   }
 
   setListener = (listener: (message: ReceiveType) => void | null) => {
-    this.listener = listener;
-  };
-
-  closeWebSocket = (): void => {
-    if (this.webSocket != null) {
-      this.webSocket.close();
-      this.webSocket = null;
-    }
-  };
+    this.listener = listener
+  }
 
   close = (): void => {
-    if (this.intervalId != null) {
-      clearInterval(this.intervalId);
+    if (this.webSocket != null) {
+      this.webSocket.close()
+      this.webSocket = null
+      console.info('[WS] WebSocket closed.')
+      return
     }
-    this.closeWebSocket();
-  };
+    console.debug('[WS] WebSocket already closed.')
+  }
 
   getId = (): (string | null) => {
-    return this.connectionId;
-  };
+    return this.connectionId
+  }
 
   getState = (): WebSocketStatus => {
     if (this.webSocket != null) {
       switch (this.webSocket.readyState) {
         case 0:
-          return 'Connecting';
+          return 'Connecting'
         case 1:
-          return 'Open';
+          if (this.connectionId == null) {
+            return 'Open'
+          }
+          return 'Ready'
         case 2:
-          return 'Closing';
+          return 'Closing'
         case 3:
-          return 'Closed';
+          return 'Closed'
       }
     }
-    return 'Disconnected';
-  };
+    return 'Disconnected'
+  }
 
   reconnect = (): void => {
     if (this.webSocket != null) {
-      return;
+      this.close()
     }
-    this.webSocket = new WebSocket(WS_URL);
-    this.webSocket.onmessage = (event: MessageEvent) => this.onMessage(event);
+    this.webSocket = new WebSocket(WS_URL)
+    this.webSocket.onmessage = (event: MessageEvent) => this.onMessage(event)
     this.webSocket.onopen = (event: Event) => {
-      console.debug('WebSocket Open:', event);
-      // this.checkConnectivity();
-    };
+      console.info('[WS] WebSocket open:', event)
+      this.send({ requestId: uuid(), type: 'info', id: '' })
+    }
     this.webSocket.onerror = (event: Event) => {
-      console.error('WebSocket Error:', event);
-      this.closeWebSocket();
-    };
+      console.error('[WS] WebSocket error:', event)
+      this.close()
+    }
     this.webSocket.onclose = (event: CloseEvent) => {
-      console.error('WebSocket Closed:', event);
-      this.closeWebSocket();
-    };
-  };
-
-  checkConnectivity = (): void => {
-    const waitConnectivityId = uuid();
-    this.send({ requestId: waitConnectivityId, type: 'ping' });
-    this.waitConnectivityId = waitConnectivityId;
-
-    setTimeout(() => {
-      if (this.waitConnectivityId === waitConnectivityId && this.webSocket != null) {
-        this.webSocket.close();
-        this.webSocket = null;
-      }
-    }, 3000);
-  };
+      console.error('[WS] WebSocket closed:', event)
+      this.close()
+    }
+  }
 
   send = (message: SendType): void => {
     if (this.webSocket == null) {
-      return;
+      console.error('[WS] Cannot send message because WebSocket is closed.')
+      return
     }
-    this.webSocket.send(JSON.stringify(message));
-  };
+    console.debug('[WS] Send message:', message)
+    this.webSocket.send(JSON.stringify(message))
+  }
 
   onMessage = (event: MessageEvent): void => {
-    const response: ReceiveType = JSON.parse(event.data);
+    console.debug('[WS] Receive message:', event.data)
+    const response: ReceiveType = JSON.parse(event.data)
     switch (response.type) {
       case 'info':
-        this.connectionId = response.id;
-        console.info('WebSocket Connection ID:', response.id);
-        break;
-
-      case 'pong':
-        if (this.waitConnectivityId === response.requestId) {
-          this.waitConnectivityId = null;
-        }
-        break;
-
-      case 'join':
-      case 'message':
-      case 'leave':
+        this.connectionId = response.id
+        console.info('[WS] WebSocket Connection ID:', response.id)
+      case 'broadcast':
+      case 'unicast':
+      case 'joined':
+      case 'leaved':
         if (this.listener != null) {
-          this.listener(response);
+          this.listener(response)
         }
-        break;
-
+        break
       default:
+        console.error('[WS] Unknown response:', response)
     }
-  };
+  }
 }
 
-export const webSocket = new WebSocketWrapper();
+export const webSocket = new WebSocketWrapper()
