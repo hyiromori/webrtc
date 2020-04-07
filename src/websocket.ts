@@ -5,10 +5,19 @@ const WS_URL = 'wss://a185bkcc38.execute-api.ap-northeast-1.amazonaws.com/prod'
 
 type WebSocketStatus = 'Connecting' | 'Open' | 'Ready' | 'Closing' | 'Closed' | 'Disconnected'
 
+type SendInfoType = {
+  requestId: string,
+  type: 'info',
+}
+
 type InfoType = {
   requestId: string,
   type: 'info',
-  id: string,
+  info: {
+    id: string,
+    groups: string[],
+    createdAt: number,
+  }
 }
 
 type JoinType = {
@@ -49,7 +58,7 @@ type UnicastType = {
   payload: any,
 }
 
-type SendType = InfoType | JoinType | LeaveType | BroadcastType | UnicastType;
+type SendType = SendInfoType | JoinType | LeaveType | BroadcastType | UnicastType;
 export type ReceiveType = InfoType | JoinedType | LeavedType | BroadcastType | UnicastType;
 
 class WebSocketWrapper {
@@ -61,7 +70,7 @@ class WebSocketWrapper {
     this.reconnect()
   }
 
-  setListener = (listener: (message: ReceiveType) => void | null) => {
+  setListener = (listener: (message: ReceiveType) => (void | Promise<void>) | null) => {
     this.listener = listener
   }
 
@@ -106,7 +115,7 @@ class WebSocketWrapper {
     this.webSocket.onmessage = (event: MessageEvent) => this.onMessage(event)
     this.webSocket.onopen = (event: Event) => {
       console.info('[WS] WebSocket open:', event)
-      this.send({ requestId: uuid(), type: 'info', id: '' })
+      this.send({ requestId: uuid(), type: 'info' })
     }
     this.webSocket.onerror = (event: Event) => {
       console.error('[WS] WebSocket error:', event)
@@ -123,7 +132,7 @@ class WebSocketWrapper {
       console.error('[WS] Cannot send message because WebSocket is closed.')
       return
     }
-    console.debug('[WS] Send message:', message)
+    console.debug('[WS] Send message:', JSON.stringify(message))
     this.webSocket.send(JSON.stringify(message))
   }
 
@@ -132,8 +141,8 @@ class WebSocketWrapper {
     const response: ReceiveType = JSON.parse(event.data)
     switch (response.type) {
       case 'info':
-        this.connectionId = response.id
-        console.info('[WS] WebSocket Connection ID:', response.id)
+        this.connectionId = response.info.id
+        console.info('[WS] WebSocket Connection ID:', this.connectionId)
       case 'broadcast':
       case 'unicast':
       case 'joined':

@@ -51,15 +51,18 @@ export class WebRTC {
     this.room = room
     this.onChangeRemoteStreams = onChangeRemoteStreams
 
-    webSocket.setListener((message: ReceiveType) => {
+    webSocket.setListener(async (message: ReceiveType) => {
       switch (message.type) {
+        case 'joined':
+          webSocket.send({ requestId: uuid(), type: 'broadcast', to: this.room, payload: { from: webSocket.getId() } })
+          break
         case 'broadcast':
           const { from } = (message.payload as JoinMessage)
           this.getPeerInfo(from, true)
           break
         case 'unicast':
           const payload: SignalingMessage = message.payload
-          this.receiveSignalingMessage(payload)
+          await this.receiveSignalingMessage(payload)
           break
         default:
           console.debug('[WebRTC] Through message:', message)
@@ -89,13 +92,12 @@ export class WebRTC {
     const peerConnection = this.getPeerInfo(peerId).connection
     switch (message.type) {
       case 'sdp':
-        if (peerConnection.remoteDescription == null) {
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp))
-          // if (peerConnection?.remoteDescription?.type === 'offer') {
-          //   const description = await peerConnection.createAnswer();
-          //   peerConnection.setLocalDescription(description);
-          //   this.sendSignalingMessage(peerId, { type: 'sdp', sdp: description });
-          // }
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp))
+        const from = webSocket.getId()
+        if (peerConnection?.remoteDescription?.type === 'offer' && from != null) {
+          const description = await peerConnection.createAnswer()
+          await peerConnection.setLocalDescription(description)
+          this.sendSignalingMessage(peerId, { from, type: 'sdp', sdp: description })
         }
         break
       case 'candidate':

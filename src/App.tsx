@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { v4 as uuid } from 'uuid'
 import styled from 'styled-components'
+import { WebRTC } from './webrtc'
+import { Video } from './video'
 
 const Wrapper = styled.div`
   position: fixed;
@@ -40,17 +42,47 @@ const Content = styled.main`
   bottom: 0;
 `
 
+let webrtc: (WebRTC | null) = null
 const App: React.FC = () => {
   const [room, onChangeRoom] = useState(uuid())
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null)
+  const [remoteStreams, setRemoteStreams] = useState<MediaStream[]>([])
+
+  const onConnect = async () => {
+    if (webrtc != null) {
+      webrtc.stop()
+    }
+    webrtc = new WebRTC(room, (streams) => {
+      setRemoteStreams(streams)
+    })
+    const stream = await webrtc.start()
+    setLocalStream(stream)
+  }
+
+  const onDisconnect = () => {
+    if (webrtc != null) {
+      webrtc.stop()
+    }
+    webrtc = null
+  }
 
   return (
     <Wrapper>
       <Header>
         Room:
-        <RoomInput type="text" value={room} onChange={(ev): void => onChangeRoom(ev.target.value)} />
+        <RoomInput
+          type="text"
+          value={room}
+          onChange={(event: any): void => onChangeRoom(event.target.value)}
+        />
+        <button onClick={onConnect}>接続</button>
+        <button onClick={onDisconnect}>切断</button>
       </Header>
       <Content>
-        CONTENT
+        <Video srcObject={localStream} muted />
+        {remoteStreams.map(stream => (
+          <Video key={stream.id} srcObject={stream} />
+        ))}
       </Content>
     </Wrapper>
   )
