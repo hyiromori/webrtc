@@ -1,10 +1,13 @@
-import React, { useState } from 'react'
+import React, {
+  useEffect,
+  useState,
+} from 'react'
 import ReactDOM from 'react-dom'
 import { v4 as uuid } from 'uuid'
 import styled from 'styled-components'
 import { WebRTC } from './webrtc/webrtc'
-import { Video } from './component/video'
 import { Layout } from './component/layout'
+import { getQueryParams } from './util/query_params'
 
 const Wrapper = styled.div`
   position: fixed;
@@ -28,7 +31,7 @@ const Header = styled.header`
 `
 
 const RoomInput = styled.input`
-  border: 0 solid silver;
+  border: solid silver;
   border-width: 0 0 1px 0; 
   font-size: 1rem;
   text-align: center;
@@ -46,9 +49,23 @@ const Content = styled.main`
 
 let webrtc: (WebRTC | null) = null
 const Index: React.FC = () => {
-  const [room, onChangeRoom] = useState(uuid())
+  const [room, _onChangeRoom] = useState('')
   const [localStream, setLocalStream] = useState<MediaStream | null>(null)
   const [remoteStreams, setRemoteStreams] = useState<MediaStream[]>([])
+
+  const onChangeRoom = (text: string): void => {
+    _onChangeRoom(text)
+    localStorage.setItem('webrtc:room', text)
+  }
+
+  useEffect(() => {
+    const { room } = getQueryParams(location.search)
+    if (room) {
+      onChangeRoom(room)
+    } else {
+      _onChangeRoom(localStorage.getItem('webrtc:room') || uuid())
+    }
+  }, [])
 
   const onConnect = async () => {
     if (webrtc != null) {
@@ -67,6 +84,10 @@ const Index: React.FC = () => {
     }
     webrtc = null
   }
+
+  useEffect(() => {
+    window.history.replaceState(null, room, `./?room=${room}`)
+  }, [room])
 
   return (
     <Wrapper>
