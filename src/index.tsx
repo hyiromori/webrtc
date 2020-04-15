@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom'
 import { v4 as uuid } from 'uuid'
 import styled from 'styled-components'
 import { WebRTC } from './webrtc/webrtc'
 import { Video } from './component/video'
+import { Layout } from './component/layout'
 
 const Wrapper = styled.div`
   position: fixed;
@@ -80,13 +81,10 @@ const Index: React.FC = () => {
         <button onClick={onDisconnect}>切断</button>
       </Header>
       <Content>
-        <Video srcObject={localStream} muted />
-        {remoteStreams.map(stream => (
-          <Video key={stream.id} srcObject={stream} />
-        ))}
+        <Layout self={localStream} peers={remoteStreams} type="basic" />
       </Content>
     </Wrapper>
   )
 }
 
-ReactDOM.render(<Index />, document.getElementById('app'));
+ReactDOM.render(<Index />, document.getElementById('app'))

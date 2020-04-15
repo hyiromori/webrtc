@@ -2,11 +2,18 @@ import React, {
   useState,
   useEffect,
 } from 'react'
+import styled from 'styled-components'
 
 interface Props {
   srcObject: (MediaStream | null)
   muted?: boolean
 }
+
+const StyledVideo = styled.video`
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+`
 
 export const Video: React.FC<Props> = (props) => {
   const { srcObject, muted } = props
@@ -19,6 +26,6 @@ export const Video: React.FC<Props> = (props) => {
   }, [srcObject, self])
 
   return (
-    <video ref={setSelf} autoPlay playsInline muted={muted || false} />
+    <StyledVideo ref={setSelf} autoPlay playsInline muted={muted || false} />
   )
 }
