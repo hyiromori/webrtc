@@ -70,10 +70,9 @@ const Index: React.FC = () => {
   const onConnect = async () => {
     if (webrtc != null) {
       webrtc.stop()
+      webrtc = null
     }
-    webrtc = new WebRTC(room, (streams) => {
-      setRemoteStreams(streams)
-    })
+    webrtc = new WebRTC(room, setRemoteStreams)
     const stream = await webrtc.start()
     setLocalStream(stream)
   }
@@ -83,8 +82,16 @@ const Index: React.FC = () => {
       webrtc.stop()
     }
     webrtc = null
+    setLocalStream(null)
   }
 
+  useEffect(() => {
+    window.addEventListener('beforeunload', (event) => {
+      if (webrtc != null) {
+        webrtc.stop()
+      }
+    })
+  }, [])
   useEffect(() => {
     window.history.replaceState(null, room, `./?room=${room}`)
   }, [room])

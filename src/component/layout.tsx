@@ -45,7 +45,7 @@ export const Layout: React.FC<Props> = (props) => {
       return (
         <Wrapper>
           {peers.map(peer => (
-            <FloatVideoWrapper>
+            <FloatVideoWrapper key={peer.id}>
               <Video srcObject={peer} />
             </FloatVideoWrapper>
           ))}

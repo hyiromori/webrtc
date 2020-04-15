@@ -35,7 +35,7 @@ type JoinedType = {
 type LeaveType = {
   requestId: string,
   type: 'leave',
-  group: string,
+  groupId: string,
 };
 
 type LeavedType = {
