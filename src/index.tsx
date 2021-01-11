@@ -3,11 +3,11 @@ import React, {
   useState,
 } from 'react'
 import ReactDOM from 'react-dom'
-import { v4 as uuid } from 'uuid'
 import styled from 'styled-components'
 import { WebRTC } from './webrtc/webrtc'
 import { Layout } from './component/layout'
 import { getQueryParams } from './util/query_params'
+import {generateRandomUrlSafeText} from "./util/random";
 
 const Wrapper = styled.div`
   position: fixed;
@@ -35,7 +35,12 @@ const RoomInput = styled.input`
   border-width: 0 0 1px 0; 
   font-size: 1rem;
   text-align: center;
-  width: 24rem;
+  width: 8rem;
+  padding: 0.25rem;
+`
+
+const Button = styled.button`
+  margin-left: 0.25rem;
   padding: 0.25rem;
 `
 
@@ -53,6 +58,8 @@ const Index: React.FC = () => {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null)
   const [remoteStreams, setRemoteStreams] = useState<MediaStream[]>([])
 
+  const started: boolean = webrtc != null
+
   const onChangeRoom = (text: string): void => {
     _onChangeRoom(text)
     localStorage.setItem('webrtc:room', text)
@@ -63,7 +70,7 @@ const Index: React.FC = () => {
     if (room) {
       onChangeRoom(room)
     } else {
-      _onChangeRoom(localStorage.getItem('webrtc:room') || uuid())
+      _onChangeRoom(localStorage.getItem('webrtc:room') || generateRandomUrlSafeText(12))
     }
   }, [])
 
@@ -86,7 +93,7 @@ const Index: React.FC = () => {
   }
 
   useEffect(() => {
-    window.addEventListener('beforeunload', (event) => {
+    window.addEventListener('beforeunload', () => {
       if (webrtc != null) {
         webrtc.stop()
       }
@@ -101,12 +108,13 @@ const Index: React.FC = () => {
       <Header>
         Room:
         <RoomInput
+          disabled={started}
+          onChange={(event: any): void => onChangeRoom(event.target.value)}
           type="text"
           value={room}
-          onChange={(event: any): void => onChangeRoom(event.target.value)}
         />
-        <button onClick={onConnect}>接続</button>
-        <button onClick={onDisconnect}>切断</button>
+        <Button onClick={onConnect} disabled={started}>Start</Button>
+        <Button onClick={onDisconnect} disabled={!started}>End</Button>
       </Header>
       <Content>
         <Layout self={localStream} peers={remoteStreams} type="basic" />

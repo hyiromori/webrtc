@@ -1,5 +1,3 @@
-import {v4 as uuid} from 'uuid'
-
 const WS_URL = 'wss://websocket.hyiromori.com/';
 
 type WebSocketStatus = 'Connecting' | 'Open' | 'Ready' | 'Closing' | 'Closed' | 'Disconnected'
