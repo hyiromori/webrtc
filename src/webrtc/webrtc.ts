@@ -1,4 +1,3 @@
-import { v4 as uuid } from 'uuid'
 import {
   ReceiveType,
   webSocket,
@@ -60,12 +59,7 @@ export class WebRTC {
     webSocket.setListener(async (message: ReceiveType) => {
       switch (message.type) {
         case 'joined':
-          webSocket.send({
-            requestId: uuid(),
-            type: 'broadcast',
-            to: this.room,
-            payload: { type: 'join', from: webSocket.getId() },
-          })
+          webSocket.send({type: 'broadcast', to: this.room, payload: {type: 'join', from: webSocket.getId()}})
           break
         case 'broadcast':
           if (message?.payload?.type === 'join') {
@@ -87,13 +81,13 @@ export class WebRTC {
   }
 
   sendSignalingMessage = (to: string, message: SignalingMessage): void => {
-    webSocket.send({ requestId: uuid(), type: 'unicast', to, payload: message })
+    webSocket.send({ type: 'unicast', to, payload: message })
   }
 
   start = async (): Promise<MediaStream> => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
     this.localStream = stream
-    webSocket.send({ requestId: uuid(), type: 'join', groupId: this.room })
+    webSocket.send({ type: 'join', to: this.room })
     return stream
   }
 
@@ -101,12 +95,11 @@ export class WebRTC {
     stopStream(this.localStream)
     Object.keys(this.peers).forEach(peerId => this.leavePeer(peerId))
     webSocket.send({
-      requestId: uuid(),
       type: 'broadcast',
       to: this.room,
       payload: { type: 'leave', from: webSocket.getId() },
     })
-    webSocket.send({ requestId: uuid(), type: 'leave', groupId: this.room })
+    webSocket.send({ type: 'leave', from: this.room })
   }
 
   receiveSignalingMessage = async (message: SignalingMessage) => {

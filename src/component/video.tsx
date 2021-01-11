@@ -10,9 +10,11 @@ interface Props {
 }
 
 const StyledVideo = styled.video`
+  height: 100%;
   max-height: 100%;
   max-width: 100%;
   object-fit: contain;
+  width: 100%;
 `
 
 export const Video: React.FC<Props> = (props) => {

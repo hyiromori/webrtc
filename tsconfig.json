@@ -1,12 +1,22 @@
 {
   "compilerOptions": {
+    "allowJs": true,
     "allowSyntheticDefaultImports": true,
-    "outDir": "./dist/",
-    "noImplicitAny": true,
-    "module": "es6",
-    "moduleResolution": "node",
-    "target": "es5",
+    "alwaysStrict": true,
     "jsx": "react",
-    "allowJs": true
+    "jsxFactory": "React.createElement",
+    "lib": [
+      "esnext",
+      "dom",
+      "webworker"
+    ],
+    "locale": "ja",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "sourceMap": true,
+    "target": "es5"
   }
 }

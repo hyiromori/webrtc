@@ -17,39 +17,33 @@ type InfoType = {
 }
 
 type JoinType = {
-  requestId: string,
   type: 'join',
-  groupId: string,
+  to: string,
 };
 
 type JoinedType = {
-  requestId: string,
   type: 'joined',
   groupId: string,
 };
 
 type LeaveType = {
-  requestId: string,
   type: 'leave',
-  groupId: string,
+  from: string,
 };
 
 type LeavedType = {
-  requestId: string,
   type: 'leaved',
-  group: string,
+  groupId: string,
 };
 
-type BroadcastType = {
-  requestId: string,
-  type: 'broadcast',
+type UnicastType = {
+  type: 'unicast',
   to: string,
   payload: any,
 }
 
-type UnicastType = {
-  requestId: string,
-  type: 'unicast',
+type BroadcastType = {
+  type: 'broadcast',
   to: string,
   payload: any,
 }
@@ -139,11 +133,16 @@ class WebSocketWrapper {
       case 'info':
         this.connectionId = response.data.connectionId
         console.info('[WS] WebSocket Connection ID:', this.connectionId)
-      case 'broadcast':
+        break
       case 'unicast':
       case 'joined':
       case 'leaved':
         if (this.listener != null) {
+          this.listener(response)
+        }
+        break
+      case 'broadcast':
+        if (this.listener != null && response.payload?.from !== this.connectionId ) {
           this.listener(response)
         }
         break
