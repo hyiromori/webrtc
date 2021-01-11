@@ -1,22 +1,18 @@
-import { v4 as uuid } from 'uuid'
+import {v4 as uuid} from 'uuid'
 
-// const WS_URL = 'wss://websocket.hyiromori.com/';
-const WS_URL = 'wss://a185bkcc38.execute-api.ap-northeast-1.amazonaws.com/prod'
+const WS_URL = 'wss://websocket.hyiromori.com/';
 
 type WebSocketStatus = 'Connecting' | 'Open' | 'Ready' | 'Closing' | 'Closed' | 'Disconnected'
 
 type SendInfoType = {
-  requestId: string,
   type: 'info',
 }
 
 type InfoType = {
-  requestId: string,
-  type: 'info',
-  info: {
-    id: string,
-    groups: string[],
-    createdAt: number,
+  type: 'info';
+  data: {
+    connectionId: string;
+    groupIds: string[];
   }
 }
 
@@ -115,7 +111,7 @@ class WebSocketWrapper {
     this.webSocket.onmessage = (event: MessageEvent) => this.onMessage(event)
     this.webSocket.onopen = (event: Event) => {
       console.info('[WS] WebSocket open:', event)
-      this.send({ requestId: uuid(), type: 'info' })
+      this.send({type: 'info'})
     }
     this.webSocket.onerror = (event: Event) => {
       console.error('[WS] WebSocket error:', event)
@@ -141,7 +137,7 @@ class WebSocketWrapper {
     const response: ReceiveType = JSON.parse(event.data)
     switch (response.type) {
       case 'info':
-        this.connectionId = response.info.id
+        this.connectionId = response.data.connectionId
         console.info('[WS] WebSocket Connection ID:', this.connectionId)
       case 'broadcast':
       case 'unicast':
